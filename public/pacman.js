@@ -1,4 +1,4 @@
-import { fillTheBox } from "./fillTheBox.js";
+import { fillTheLevel } from "./fillTheLevel.js";
 
 const canvas = document.getElementById("screen");
 /** @type {CanvasRenderingContext2D} */
@@ -20,7 +20,7 @@ for (let i = 1; i <= heightBlocks; i++) {
     screenBox[i][j] = false;
   }
 }
-fillTheBox(screenBox);
+fillTheLevel(screenBox);
 
 for (let i = 1; i <= heightBlocks; i++) {
   for (let j = 1; j <= widthBlocks; j++) {
