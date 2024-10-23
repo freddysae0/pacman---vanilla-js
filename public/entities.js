@@ -14,32 +14,61 @@ export const pacman = {
   speed: 1,
   size: 30,
   moving_to: Direction.NO_MOVE,
-  could_move: function (direction) {
-    if (this.moving_to == direction && map_design[this.y][this.x - 1]) {
+  animation_right: "",
+  animation_down: "",
+  animation_up: "",
+  animation_die: "",
+  could_move: function (direction, map_design) {
+    /* Portals */
+    if (direction == Direction.LEFT && this.x == 2 && this.y == 15) {
       return true;
     }
-    if (this.moving_to == direction && map_design[this.y][this.x + 1]) {
+    if (direction == Direction.RIGHT && this.x == 27 && this.y == 15) {
       return true;
     }
-    if (this.moving_to == direction && map_design[this.y + 1][this.x]) {
+    /* Portals */
+    if (Direction.LEFT == direction && map_design[this.y][this.x - 1] & 1) {
       return true;
     }
-    if (this.moving_to == direction && map_design[this.y - 1][this.x]) {
+    if (Direction.RIGHT == direction && map_design[this.y][this.x + 1] & 1) {
+      return true;
+    }
+    if (Direction.DOWN == direction && map_design[this.y + 1][this.x] & 1) {
+      return true;
+    }
+    if (Direction.UP == direction && map_design[this.y - 1][this.x] & 1) {
       return true;
     }
     return false;
   },
   move_pacman: function (map_design) {
-    if (this.moving_to == Direction.LEFT && map_design[this.y][this.x - 1]) {
+    /* PORTALS */
+    if (this.moving_to == Direction.LEFT && this.x == 2 && this.y == 15) {
+      this.x = 28;
+    }
+    if (this.moving_to == Direction.RIGHT && this.x == 27 && this.y == 15) {
+      this.x = 1;
+    }
+
+    if (
+      this.moving_to == Direction.LEFT &&
+      map_design[this.y][this.x - 1] & 1
+    ) {
       this.x -= this.speed;
     }
-    if (this.moving_to == Direction.RIGHT && map_design[this.y][this.x + 1]) {
+    if (
+      this.moving_to == Direction.RIGHT &&
+      map_design[this.y][this.x + 1] & 1
+    ) {
       this.x += this.speed;
     }
-    if (this.moving_to == Direction.DOWN && map_design[this.y + 1][this.x]) {
+    if (
+      this.moving_to == Direction.DOWN &&
+      map_design[this.y + 1][this.x] & 1
+    ) {
       this.y += this.speed;
     }
-    if (this.moving_to == Direction.UP && map_design[this.y - 1][this.x]) {
+    if (this.moving_to == Direction.UP && map_design[this.y - 1][this.x] & 1) {
       this.y -= this.speed;
     }
   },

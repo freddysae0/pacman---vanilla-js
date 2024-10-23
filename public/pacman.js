@@ -1,10 +1,11 @@
-import { fillTheBox } from "./fillTheBox.js";
 import { Direction, pacman } from "./entities.js";
+import { fillTheLevel } from "./fillTheLevel.js";
+
 console.log("pacman:", pacman);
 const canvas = document.getElementById("screen");
 /** @type {CanvasRenderingContext2D} */
 var ctx = canvas.getContext("2d");
-let screenBox = new Array(1000);
+let map_design = new Array(1000);
 
 export const x = 25;
 const widthBlocks = 29;
@@ -16,9 +17,9 @@ canvas.setAttribute("width", `${width}`);
 canvas.setAttribute("height", `${height}`);
 
 for (let i = 1; i <= heightBlocks; i++) {
-  screenBox[i] = new Array(widthBlocks + 1);
+  map_design[i] = new Array(widthBlocks + 1);
   for (let j = 1; j <= widthBlocks; j++) {
-    screenBox[i][j] = false;
+    map_design[i][j] = false;
   }
 }
 // Declara el objeto 'keys' para almacenar el estado de las teclas
@@ -34,7 +35,7 @@ window.addEventListener("keyup", (e) => {
   keys[e.key] = false; // Marca la tecla como liberada
 });
 
-fillTheBox(screenBox);
+fillTheLevel(map_design);
 
 const img = new Image(); // Create a new image object
 img.src = "./assets/map.webp";
@@ -42,7 +43,7 @@ img.onload = () => {
   ctx.drawImage(img, x, x, width - 20, height - 25);
   for (let i = 1; i <= heightBlocks; i++) {
     for (let j = 1; j <= widthBlocks; j++) {
-      if (screenBox[i][j] == true) {
+      if (map_design[i][j] == true) {
         ctx.fillStyle = "white";
         ctx.fillRect(j * x, i * x, x, x);
       }
@@ -70,30 +71,30 @@ function gameLoop() {
 function update() {
   // Aquí puedes añadir la lógica de actualización, como el movimiento del jugador
 
-  if (keys["ArrowUp"] && pacman.could_move(Direction.UP)) {
+  if (keys["ArrowUp"] && pacman.could_move(Direction.UP, map_design)) {
     pacman.moving_to = Direction.UP;
   }
-  if (keys["ArrowDown"] && pacman.could_move(Direction.DOWN)) {
+  if (keys["ArrowDown"] && pacman.could_move(Direction.DOWN, map_design)) {
     pacman.moving_to = Direction.DOWN;
   }
-  if (keys["ArrowLeft"] && pacman.could_move(Direction.LEFT)) {
+  if (keys["ArrowLeft"] && pacman.could_move(Direction.LEFT, map_design)) {
     pacman.moving_to = Direction.LEFT;
   }
-  if (keys["ArrowRight"] && pacman.could_move(Direction.RIGHT)) {
+  if (keys["ArrowRight"] && pacman.could_move(Direction.RIGHT, map_design)) {
     pacman.moving_to = Direction.RIGHT;
   }
 }
 
 // Dibuja el estado del juego en el canvas
 function render() {
-  pacman.move_pacman(screenBox);
+  pacman.move_pacman(map_design);
   // Limpia el canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.drawImage(img, x, x, width - 20, height - 25);
   for (let i = 1; i <= heightBlocks; i++) {
     for (let j = 1; j <= widthBlocks; j++) {
-      if (screenBox[i][j] == true) {
+      if (map_design[i][j] & 1) {
         ctx.fillStyle = "white";
         ctx.fillRect(j * x, i * x, x, x);
       }
