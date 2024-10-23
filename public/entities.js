@@ -14,6 +14,21 @@ export const pacman = {
   speed: 1,
   size: 30,
   moving_to: Direction.NO_MOVE,
+  could_move: function (direction) {
+    if (this.moving_to == direction && map_design[this.y][this.x - 1]) {
+      return true;
+    }
+    if (this.moving_to == direction && map_design[this.y][this.x + 1]) {
+      return true;
+    }
+    if (this.moving_to == direction && map_design[this.y + 1][this.x]) {
+      return true;
+    }
+    if (this.moving_to == direction && map_design[this.y - 1][this.x]) {
+      return true;
+    }
+    return false;
+  },
   move_pacman: function (map_design) {
     if (this.moving_to == Direction.LEFT && map_design[this.y][this.x - 1]) {
       this.x -= this.speed;

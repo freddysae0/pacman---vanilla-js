@@ -69,16 +69,17 @@ function gameLoop() {
 // Actualiza la lógica del juego
 function update() {
   // Aquí puedes añadir la lógica de actualización, como el movimiento del jugador
-  if (keys["ArrowUp"]) {
+
+  if (keys["ArrowUp"] && pacman.could_move(Direction.UP)) {
     pacman.moving_to = Direction.UP;
   }
-  if (keys["ArrowDown"]) {
+  if (keys["ArrowDown"] && pacman.could_move(Direction.DOWN)) {
     pacman.moving_to = Direction.DOWN;
   }
-  if (keys["ArrowLeft"]) {
+  if (keys["ArrowLeft"] && pacman.could_move(Direction.LEFT)) {
     pacman.moving_to = Direction.LEFT;
   }
-  if (keys["ArrowRight"]) {
+  if (keys["ArrowRight"] && pacman.could_move(Direction.RIGHT)) {
     pacman.moving_to = Direction.RIGHT;
   }
 }
