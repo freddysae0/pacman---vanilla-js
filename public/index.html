@@ -5,13 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pacman Js</title>
     <style>
-      body {
-        background-color: rgb(27, 27, 27);
+      * {
+        margin: 0;
+        padding: 0;
       }
+      h1 {
+        color: white;
+      }
+      body {
+        display: flex;
+        height: 100vh;
+        justify-content: center;
+        align-items: center;
+        background-color: black;
+        perspective: 1000px; /* Controla la profundidad de la vista */
+        font-family: Retrogaming;
+        
+      }
+      canvas {
+        animation: rotate 10s infinite alternate ease-in-out;
+        width: 100%;
+        }
+      .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .stats{
+        margin-left: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        }
+        .lifes-container{
+          display: flex;
+          align-items: center;
+        }
+        .heart{
+          width: 50px;
+          height: 50px;
+        }
+        .game-over{
+          position: absolute;
+          top: 0;
+          left: 0;
+          background-color: black;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          display: flex;
+          justify-content: center;
+          align-items : center;
+          transition: all 1s ease-in-out;
+          & img{
+            width: 100%;
+            height: fit-content;
+            max-width: 1000px;
+            pointer-events: none;
+            
+          } 
+        }
+
+        @font-face {
+          font-family: "Retrogaming";
+          src: url("assets/fonts/Retro\ Gaming.ttf");
+        }
+
     </style>
   </head>
   <body>
-    <canvas id="screen"></canvas>
+    <div class="game-over">
+      <img src="./assets/game-over.gif" alt="">
+    </div>
+    <div class="container">
+      <div class="stats">
+        <h1>Coins: <span id="coin-ammount">0</span></h1>
+        <div class="lifes-container">
+          <img class="heart" src="./assets/heart.png" alt="Lifes"> 
+          <img class="heart" src="./assets/heart.png" alt="Lifes"> 
+          <img class="heart" src="./assets/heart.png" alt="Lifes"> 
+
+        </div>
+
+      </div>
+      <canvas id="screen"></canvas>
+    </div>
+    <script src="https://unpkg.com/gifler/gifler.min.js"></script>
     <script src="pacman.js" type="module"></script>
   </body>
 </html>
