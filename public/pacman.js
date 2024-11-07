@@ -257,7 +257,8 @@ function renderPacman() {
 
 
   if (pacmanRenderTime >= 0.2) {
-
+    console.log("coooo",  animationsImgs[pacman.currentAnimation + '/' + animations[pacman.currentAnimation][pacman.currentFrame]]);
+    
     ctx.drawImage(animationsImgs[pacman.currentAnimation + '/' + animations[pacman.currentAnimation][pacman.currentFrame]], pacman.x * x - 5, pacman.y * x - 3, pacman.size, pacman.size);
     pacmanRenderTime = 0;
   }
@@ -342,10 +343,10 @@ async function loadAnimations() {
   const entities = ["pacman", "red-enemy", "blue-enemy", "orange-enemy", "pink-enemy"]  
     
     for await (const entity of entities) {
-       loadAnimation(`./assets/${entity}/moving-up`)
-       loadAnimation(`./assets/${entity}/moving-down`)
-       loadAnimation(`./assets/${entity}/moving-left`)
-       loadAnimation(`./assets/${entity}/moving-right`)
+       await loadAnimation(`./assets/${entity}/moving-up`)
+       await loadAnimation(`./assets/${entity}/moving-down`)
+       await loadAnimation(`./assets/${entity}/moving-left`)
+       await loadAnimation(`./assets/${entity}/moving-right`)
     }
     
   pacman.animations = animations
