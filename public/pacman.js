@@ -1,4 +1,4 @@
-import { Direction, pacman, Enemy, minimumPaths, BFS , enemy_route , drawLifes } from "./entities.js";
+import { Direction, pacman, Enemy, minimumPaths, BFS, enemy_route, drawLifes } from "./entities.js";
 
 import { fillTheLevel } from "./fillTheLevel.js";
 
@@ -26,7 +26,7 @@ const States = {
 
 let state = States.chase;
 
-
+let isLoading = true;
 
 for (let i = 1; i <= heightBlocks; i++) {
   map_design[i] = new Array(widthBlocks + 1);
@@ -36,6 +36,9 @@ for (let i = 1; i <= heightBlocks; i++) {
 }
 // Declara el objeto 'keys' para almacenar el estado de las teclas
 const keys = {};
+const animations = {};
+const animationsImgs = {};
+
 const original_map_design = map_design;
 // Eventos para detectar cuando una tecla se presiona
 window.addEventListener("keydown", (e) => {
@@ -94,65 +97,63 @@ window.addEventListener("touchend", (e) => {
   }
 });
 
+
+
+
 fillTheLevel(map_design);
-
-const violetRouteBFS = BFS(map_design,[6,7])
-const redRouteBFS = BFS(map_design,[6,22])
-const orangeRouteBFS = BFS(map_design,[24,10])
-const yellowRouteBFS = BFS(map_design,[24,22])
+const violetRouteBFS = BFS(map_design, [6, 7])
+const redRouteBFS = BFS(map_design, [6, 22])
+const orangeRouteBFS = BFS(map_design, [24, 10])
+const yellowRouteBFS = BFS(map_design, [24, 22])
 export let enemies = [
-  new Enemy("red", 14, 16, map_design, {y:6 , x:22}  , {y:14 , x:16}  ,  1),
-  new Enemy("violet", 14, 13, map_design, {y:6 , x:7}, {y:14 , x:13}  ,6),
-  new Enemy("orange", 16, 13, map_design,{y:24 , x:10} ,{y:16 , x:13} , 11),
-  new Enemy("green", 16, 16, map_design, {y:24 , x:22},{y:16 , x:16}  ,21),
+  new Enemy("red", 14, 16, map_design, { y: 6, x: 22 }, { y: 14, x: 16 }, 1, animations),
+  new Enemy("violet", 14, 13, map_design, { y: 6, x: 7 }, { y: 14, x: 13 }, 6, animations),
+  new Enemy("orange", 16, 13, map_design, { y: 24, x: 10 }, { y: 16, x: 13 }, 11, animations),
+  new Enemy("green", 16, 16, map_design, { y: 24, x: 22 }, { y: 16, x: 16 }, 21, animations),
 ];
+loadAnimations();
 
-pacman.nextLevel = ()=>{
+pacman.nextLevel = () => {
   reset(true)
 }
 
-pacman.enemies= enemies;
-pacman.resetEnemies= resetEnemies;
+pacman.enemies = enemies;
+pacman.resetEnemies = resetEnemies;
 const img = new Image(); // Create a new image object
 img.src = "./assets/map.webp";
-img.onload = () => {
-  ctx.drawImage(img, x, x, width - 20, height - 25);
-  for (let i = 1; i <= heightBlocks; i++) {
-    for (let j = 1; j <= widthBlocks; j++) {
-      if (map_design[i][j] == true) {
-        ctx.fillStyle = "white";
-        ctx.fillRect(j * x, i * x, x, x);
-      }
-    }
-  }
-};
+
 const renderInterval = 0.2;
 const changeStateInterval = 10;
 let frame = 0;
 let accumulatedTime = 0;
 let accumulatedTime10 = 0;
 let lastTime = 0;
+let deltaTime = 0;
 function gameLoop(currentTime) {
+
   frame++;
-  let deltaTime = (currentTime - lastTime) / 1000;
+  deltaTime = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
   accumulatedTime += deltaTime;
-  accumulatedTime10 +=deltaTime;
+  accumulatedTime10 += deltaTime;
   // Check if 0.3 seconds have passed
+
   if (accumulatedTime >= renderInterval) {
     render();
     accumulatedTime = 0; // Reset the accumulated time
   }
+  renderPacman();
+  renderEnemies();
   if (accumulatedTime10 >= changeStateInterval) {
     console.log("change status");
-    
+
     if (state == States.chase) {
       state = States.scatter
       enemies[0].hasReached = false
       enemies[1].hasReached = false
       enemies[2].hasReached = false
       enemies[3].hasReached = false
-    }else if (state == States.scatter) {
+    } else if (state == States.scatter) {
       state = States.chase
     }
     accumulatedTime10 = 0;
@@ -196,39 +197,39 @@ function render() {
   let moveHandler = true;
   const pacmanBFS = pacman.move_pacman(map_design, enemies);
   const routeBFSArrays = [redRouteBFS, violetRouteBFS, orangeRouteBFS, yellowRouteBFS]
-  enemies.map((enemy , i) => {
-    moveHandler =renderCount%2 ==0
+  enemies.map((enemy, i) => {
+    moveHandler = renderCount % 2 == 0
 
     switch (state) {
       case States.scatter:
         if (enemy.isAGhost) {
 
           enemy.moveToOpositeDirection()
-          enemy.moveAsGhost( pacmanBFS,  moveHandler)
+          enemy.moveAsGhost(pacmanBFS, moveHandler)
         }
         else
-        enemy.moveEnemy( map_design, routeBFSArrays[i])
-      break;
+          enemy.moveEnemy(map_design, routeBFSArrays[i])
+        break;
       case States.chase:
         if (enemy.isAGhost) {
           enemy.moveToOpositeDirection()
-          enemy.moveAsGhost( pacmanBFS,  moveHandler)
+          enemy.moveAsGhost(pacmanBFS, moveHandler)
         }
-          else  
-        enemy.moveByBFS(pacmanBFS ) ;
+        else
+          enemy.moveByBFS(pacmanBFS);
         break;
-      
-    } 
+
+    }
   })
-  
-  
-/*   enemies[1].moveToPacman(pacmanBFS);
-  enemies[2].moveToPacman(pacmanBFS);
-  enemies[3].moveToPacman(pacmanBFS); */
-  // Limpia el canvas
+
+
+  // Clean canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Draw map
   ctx.drawImage(img, x, x, width - 20, height - 25);
+
+  // Draw coins
   for (let i = 1; i <= heightBlocks; i++) {
     for (let j = 1; j <= widthBlocks; j++) {
       if (map_design[i][j] & 2) {
@@ -238,92 +239,161 @@ function render() {
       }
     }
   }
-  
+  // Draw special coin
   for (let i = 1; i <= heightBlocks; i++) {
     for (let j = 1; j <= widthBlocks; j++) {
       if (map_design[i][j] & 4) {
-        drawCircle(ctx, j * x + 10,i * x + 10, 18);
+        drawCircle(ctx, j * x + 10, i * x + 10, 18);
         ctx.fill()
-        
+
       }
     }
   }
 
-  // ctx.drawImage(img, x, x, width - 20, height - 25);
-  // Painting Pacman
-  ctx.fillStyle = "yellow";
-  ctx.fillRect(pacman.x * x, pacman.y * x, pacman.size, pacman.size);
+}
+let pacmanRenderTime = 0
+function renderPacman() {
+  pacmanRenderTime += deltaTime;
 
-  // Painting Enemies
+
+  if (pacmanRenderTime >= 0.2) {
+
+    ctx.drawImage(animationsImgs[pacman.currentAnimation + '/' + animations[pacman.currentAnimation][pacman.currentFrame]], pacman.x * x - 5, pacman.y * x - 3, pacman.size, pacman.size);
+    pacmanRenderTime = 0;
+  }
+  pacman.nextFrame();
+  // Painting Pacman
+
+
+}
+let enemyRenderTime = 0
+function renderEnemies() {
+
+  if (!enemies[0].animations == null) {
+    enemies[0].animations = animations
+    enemies[1].animations = animations
+    enemies[2].animations = animations
+    enemies[3].animations = animations
+    return; // Skip rendering if animations are not loaded yet
+  }
+  enemyRenderTime += deltaTime;
+
+  if (enemyRenderTime >= 0.2) {
 
   for (let i = 0; i < enemies.length; i++) {
     const enemy = enemies[i];
 
-    ctx.fillStyle = enemy.color;
-    ctx.fillRect(enemy.x * x, enemy.y * x, enemy.size, enemy.size);
+
+      ctx.drawImage(animationsImgs[enemy.currentAnimation + '/' + animations[enemy.currentAnimation][enemy.currentFrame]], enemy.x * x - 5, enemy.y * x - 3, enemy.size, enemy.size);
+      enemyRenderTime = 0;
+      enemy.nextFrame();
+      
+    }
   }
-/* 
-  for (let i = 1; i <= heightBlocks; i++) {
-    for (let j = 1; j <= widthBlocks; j++) {
-      if (map_design[i][j] & 1) {
-        ctx.fillStyle = "red";
-        ctx.fillText(enemy_route[i][j], j * x + 8, i * x + 8);
-      }
-    }
-  } */
-  /* for (let i = 1; i <= heightBlocks; i++) {
-    for (let j = 1; j <= widthBlocks; j++) {
-      if (map_design[i][j] & 1) {
-        ctx.fillStyle = "red";
-        ctx.fillText(pacman.bfs[i][j], j * x + 8, i * x + 8);
-      }
-    }
-  } */
+
+
 }
+
+
 
 /**
  * Resets Pacman and the enemies to their initial state
  * @return {undefined}
  */
-const reset = (nextLevel= false) => {
+const reset = (nextLevel = false) => {
   pacman.x = 14;
   pacman.y = 18;
   pacman.previousX = 14;
   pacman.previousY = 18;
   pacman.speed = 1;
-  pacman.size = 25;
+  pacman.size = 30;
   pacman.moving_to = Direction.NO_MOVE;
   if (!nextLevel) {
     pacman.lifes = 3;
     pacman.coins = 0;
-    
+
   }
   pacman.drawCoinNumber(pacman.coins);
   pacman.drawLifes()
   clearTimeout(pacman.ghostMode);
 
-  enemies =  [ new Enemy("red", 14, 16, map_design, {y:6 , x:22}  , {y:14 , x:16}  ,  1),
-  new Enemy("violet", 14, 13, map_design, {y:6 , x:7}, {y:14 , x:13}  ,6),
-  new Enemy("orange", 16, 13, map_design,{y:24 , x:10} ,{y:16 , x:13} , 11),
-  new Enemy("green", 16, 16, map_design, {y:24 , x:22},{y:16 , x:16}  ,21),
-]
-fillTheLevel(map_design);
-pacman.enemies = enemies;
-   
+  enemies = [new Enemy("red", 14, 16, map_design, { y: 6, x: 22 }, { y: 14, x: 16 }, 1, animations),
+  new Enemy("blue", 14, 13, map_design, { y: 6, x: 7 }, { y: 14, x: 13 }, 6, animations),
+  new Enemy("orange", 16, 13, map_design, { y: 24, x: 10 }, { y: 16, x: 13 }, 11, animations),
+  new Enemy("pink", 16, 16, map_design, { y: 24, x: 22 }, { y: 16, x: 16 }, 21, animations),
+  ]
+  fillTheLevel(map_design);
+  pacman.enemies = enemies;
+
 };
 
-function resetEnemies(){
-   clearTimeout(pacman.ghostMode);
-  enemies =  [ new Enemy("red", 14, 16, map_design, {y:6 , x:22}  , {y:14 , x:16}  ,  1),
-    new Enemy("violet", 14, 13, map_design, {y:6 , x:7}, {y:14 , x:13}  ,6),
-    new Enemy("orange", 16, 13, map_design,{y:24 , x:10} ,{y:16 , x:13} , 11),
-    new Enemy("green", 16, 16, map_design, {y:24 , x:22},{y:16 , x:16}  ,21),
-  ] 
+function resetEnemies() {
+  clearTimeout(pacman.ghostMode);
+  enemies = [new Enemy("red", 14, 16, map_design, { y: 6, x: 22 }, { y: 14, x: 16 }, 1, animations),
+  new Enemy("blue", 14, 13, map_design, { y: 6, x: 7 }, { y: 14, x: 13 }, 6, animations),
+  new Enemy("orange", 16, 13, map_design, { y: 24, x: 10 }, { y: 16, x: 13 }, 11, animations),
+  new Enemy("pink", 16, 16, map_design, { y: 24, x: 22 }, { y: 16, x: 16 }, 21, animations),
+  ]
   pacman.enemies = enemies;
 };
 
 
-document.addEventListener("keydown", (event) => {  
+async function loadAnimations() {
+  const entities = ["pacman", "red-enemy", "blue-enemy", "orange-enemy", "pink-enemy"]  
+    
+    for await (const entity of entities) {
+       loadAnimation(`./assets/${entity}/moving-up`)
+       loadAnimation(`./assets/${entity}/moving-down`)
+       loadAnimation(`./assets/${entity}/moving-left`)
+       loadAnimation(`./assets/${entity}/moving-right`)
+    }
+    
+  pacman.animations = animations
+  console.log(animations);
+  enemies[0].animations = animations
+  enemies[1].animations = animations
+  enemies[2].animations = animations
+  enemies[3].animations = animations
+
+  isLoading = false
+}
+async function loadAnimation(url) {
+  try {
+    const response = await fetch(url + '/animation.json');
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+    animations[url] = data.frames;
+
+    // Crear promesas para cargar todas las imágenes
+    const imagePromises = data.frames.map((frame) => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = url + '/' + frame;
+
+        img.onload = () => {
+          animationsImgs[url + '/' + frame] = img;
+          resolve();  // Resolvemos la promesa cuando la imagen se carga
+        };
+
+        img.onerror = reject;  // En caso de error en la carga de la imagen
+      });
+    });
+
+    // Esperar que todas las imágenes se hayan cargado
+    await Promise.all(imagePromises);
+
+    console.log('Todas las imágenes se cargaron correctamente');
+    console.log(data);  // Aquí se tiene el contenido del JSON
+  } catch (error) {
+    console.error('Hubo un problema con la solicitud Fetch:', error);
+  }
+}
+
+document.addEventListener("keydown", (event) => {
   if (event.key === " " && pacman.lifes <= 0) {
     const $gameOver = document.querySelector(".game-over");
     $gameOver.style.opacity = "0";
@@ -331,13 +401,26 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-document.addEventListener("touchend", (event) => {  
-  if ( pacman.lifes <= 0) {
+document.addEventListener("touchend", (event) => {
+  if (pacman.lifes <= 0) {
     const $gameOver = document.querySelector(".game-over");
     $gameOver.style.opacity = "0";
     reset();
   }
 });
-gameLoop(0);
+
+const awaitLoadingInterval = setInterval(() => {
+  if (!isLoading) {
+    // Ensure `animations` is fully loaded before starting the game loop
+    console.log("aaaaaaaaaa", animations);
+
+    if (animations && Object.keys(animations).length > 0) {
+      gameLoop(0);
+      clearInterval(awaitLoadingInterval);
+    }
+
+  }
+
+}, 200);
 
 

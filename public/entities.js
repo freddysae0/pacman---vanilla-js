@@ -7,6 +7,7 @@ export const Direction = {
   UP: 3,
   DOWN: 4,
   NO_MOVE: 0,
+  DIE: 5
 };
 export const enemy_route = Array.from({ length: 31 }, () => new Array(31).fill(0));
 enemy_route[2][2] = Direction.RIGHT;
@@ -37,15 +38,15 @@ enemy_route[27][22] = Direction.RIGHT;
 enemy_route[27][27] = Direction.DOWN;
 enemy_route[30][27] = Direction.LEFT;
 enemy_route[30][16] = Direction.UP;
-enemy_route[27][16] = Direction.RIGHT; 
-const $lifes  = document.querySelector(".lifes-container");
- 
-export const drawLifes = (lifes) =>  {
-    let innerContent = "";
-    for (let i = 0; i < lifes; i++) {
-        innerContent += `<img class="heart" src="./assets/heart.png" alt="Lifes">`
-    }
-    $lifes.innerHTML = innerContent    
+enemy_route[27][16] = Direction.RIGHT;
+const $lifes = document.querySelector(".lifes-container");
+
+export const drawLifes = (lifes) => {
+  let innerContent = "";
+  for (let i = 0; i < lifes; i++) {
+    innerContent += `<img class="heart" src="./assets/heart.png" alt="Lifes">`
+  }
+  $lifes.innerHTML = innerContent
 }
 export const pacman = {
   name: "Pacman",
@@ -55,22 +56,66 @@ export const pacman = {
   previousX: 14,
   previousY: 18,
   speed: 1,
-  size: 25,
-  moving_to: Direction.NO_MOVE,
-  animation_right: "",
-  animation_down: "",
-  animation_up: "",
-  animation_die: "",
+  size: 30,
+  _moving_to: Direction.NO_MOVE,
+  currentAnimation: "./assets/pacman/moving-up",
+  currentFrame: 0,
+  animation_right: "./assets/pacman/moving-right",
+  animation_down: "./assets/pacman/moving-down",
+  animation_up: "./assets/pacman/moving-up",
+  animation_left: "./assets/pacman/moving-left",
   coins: 0,
   bfs: null,
   lifes: 3,
   enemies: [],
   ghostTime: 7000,
   resetEnemies: null,
-  original_map_design : null,
+  original_map_design: null,
   ghostMode: null,
   nextLevel: null,
   hasWon: false,
+  animations: null,
+
+  get moving_to() {
+    return this._moving_to;
+  },
+  set moving_to(value) {
+    if (value == this._moving_to) {
+      return;
+    }
+    this._moving_to = value
+    this.setAnimation(value)
+
+  },
+
+  nextFrame() {
+    if (this.currentFrame == this.animations[this.currentAnimation].length - 1) {
+      this.currentFrame = 0;
+    }
+    else {
+      this.currentFrame++;
+    }
+  },
+
+  setAnimation: function (direction) {
+    if (direction == Direction.LEFT) {
+      this.currentAnimation = this.animation_left;
+    }
+    if (direction == Direction.RIGHT) {
+      this.currentAnimation = this.animation_right;
+    }
+    if (direction == Direction.UP) {
+      this.currentAnimation = this.animation_up;
+    }
+    if (direction == Direction.DOWN) {
+      this.currentAnimation = this.animation_down;
+
+    }
+    if (direction == Direction.DIE) {
+      this.currentAnimation = this.animation_die;
+
+    }
+  },
 
   drawLifes: function (val = this.lifes) {
     drawLifes(val)
@@ -80,7 +125,7 @@ export const pacman = {
   },
   activateGhostMode() {
     console.log("ghost mode started");
-    
+
     this.enemies.map((enemy) => {
       enemy.convertToGhost();
     })
@@ -107,19 +152,18 @@ export const pacman = {
       clearTimeout(this.ghostMode);
       this.ghostMode = setTimeout(() => {
         this.desactivateGhostMode();
-      } , this.ghostTime)
+      }, this.ghostTime)
 
     }
     if (map_design[this.y][this.x] & 2) {
-      this.coins+=100;
+      this.coins += 100;
       map_design[this.y][this.x] = 1;
       this.drawCoinNumber();
       this.hasWon = false
     }
 
 
-    console.log( this.coins % 26000 == 0 );
-    
+
     if (this.coins % 26000 == 0 && !this.hasWon) {
       this.gameWined()
     }
@@ -147,18 +191,17 @@ export const pacman = {
     }
     return false;
   },
-  
-  die(){
+
+  die() {
     //What happens wen pacman dies
     this.lifes--;
     this.x = 14;
     this.y = 18;
     this.resetEnemies()
     drawLifes(this.lifes)
-    
-    
+
+
     if (this.lifes == 0) {
-      console.log(this.lifes);
       showGameOver()
     }
   },
@@ -187,7 +230,7 @@ export const pacman = {
       this.x = 1;
     }
     /* PORTALS */
-    
+
     if (
       this.moving_to == Direction.LEFT &&
       map_design[this.y][this.x - 1] & 1
@@ -239,46 +282,86 @@ export class Enemy {
     y = 24,
     x = 14,
     map_design = [],
-    enemy_route_main_point = {y: 6 , x: 7},
-    start = {y: 2 , x: 2},
+    enemy_route_main_point = { y: 6, x: 7 },
+    start = { y: 2, x: 2 },
     delay = 0.2,
-    img = "",
-    speed = 1,
-    size = 25,
-    moving_to = Direction.RIGHT,
-    animation_right = "",
-    animation_down = "",
-    animation_up = "",
-    animation_die = "",
-    coins = 0
+    animations = null,
+    
+    
   ) {
+    this.currentFrame = 0,
+    this.animations = animations;
+    this.currentAnimation = `./assets/${color}-enemy/moving-right`,
+    this.animation_right = `./assets/${color}-enemy/moving-right`,
+    this.animation_down = `./assets/${color}-enemy/moving-down`,
+    this.animation_up = `./assets/${color}-enemy/moving-up`,
+    this.animation_left = `./assets/${color}-enemy/moving-left`,
     this.isInPrison = true;
     this.isAGhost = false;
     this.hasReached = false;
     this.color = color;
-    this.img = img;
     this.x = x;
     this.y = y;
     this.start = start;
     this.previousX = x;
     this.previousY = y;
-    this.speed = speed;
-    this.size = size;
+    this.speed = 1;
+    this._moving_to = Direction.RIGHT;
+    this.size = 30;
     this.map_design = map_design;
     this.delay = delay;
-    this.moving_to = moving_to;
-    this.animation_right = animation_right;
-    (this.animation_down = animation_down), (this.animation_up = animation_up);
-    this.animation_die = animation_die;
-    this.coins = coins;
+    
     clearTimeout(this.appearTimeout);
-    this.appearTimeout =  setTimeout(() => {
+    this.appearTimeout = setTimeout(() => {
       this.x = 15
       this.y = 12
     }, delay * 1000);
   }
 
-  reset(){
+  // Getter y Setter para moving_to
+  get moving_to() {
+    return this._moving_to;
+  }
+
+  set moving_to(value) {
+    if (value === this._moving_to) {
+      return;
+    }
+    console.log("moving to", value);
+    
+    this._moving_to = value;
+    this.setAnimation(value);  // Se necesita una implementación de setAnimation
+  }
+
+
+  nextFrame() {
+    if (this.currentFrame == this.animations[this.currentAnimation].length - 1) {
+      this.currentFrame = 0;
+    }
+    else {
+      this.currentFrame++;
+    }
+  }
+  setAnimation(direction) {
+    if (direction == Direction.LEFT) {
+      this.currentAnimation = this.animation_left;
+    }
+    if (direction == Direction.RIGHT) {
+      this.currentAnimation = this.animation_right;
+    }
+    if (direction == Direction.UP) {
+      this.currentAnimation = this.animation_up;
+    }
+    if (direction == Direction.DOWN) {
+      this.currentAnimation = this.animation_down;
+
+    }
+    if (direction == Direction.DIE) {
+      this.currentAnimation = this.animation_die;
+
+    }
+  }
+  reset() {
     this.isInPrison = true;
     this.isAGhost = false;
     this.hasReached = false;
@@ -286,52 +369,50 @@ export class Enemy {
     this.y = this.start.y;
     this.previousX = this.start.x;
     this.previousY = this.start.y;
-    console.log("reseet");
-    
+
     clearTimeout(this.appearTimeout);
-    this.appearTimeou= setTimeout(() => {
+    this.appearTimeou = setTimeout(() => {
       this.x = 15
       this.y = 12
-     } , this.delay * 1000)
+    }, this.delay * 1000)
   }
-  convertToGhost(){
-    this.isAGhost = true; 
+  convertToGhost() {
+    this.isAGhost = true;
   }
-  revertFromGhost(){
-    this.isAGhost = false; 
+  revertFromGhost() {
+    this.isAGhost = false;
   }
-  freeFromPrision(){
+  freeFromPrision() {
     this.isInPrison = false;
-    this.x= 14
-    this.y= 12 
+    this.x = 14
+    this.y = 12
   }
-  sendToPrison(){
+  sendToPrison() {
     this.isInPrison = true;
-    this.x= this.start.x
-    this.y= this.start.y
-    this.previousX= this.start.x
-    this.previousY= this.start.y
+    this.x = this.start.x
+    this.y = this.start.y
+    this.previousX = this.start.x
+    this.previousY = this.start.y
     this.freeFromPrision()
   }
-  hasTouchedPacman(){
+  hasTouchedPacman() {
     let res = false;
-   
-    if((this.x == pacman.x && this.y== pacman.y) || (this.previousX == pacman.x && this.previousY == pacman.y && pacman.previousX   )){
+
+    if ((this.x == pacman.x && this.y == pacman.y) || (this.previousX == pacman.x && this.previousY == pacman.y && pacman.previousX)) {
       res = true;
-      console.log("isAGhost" , this.isAGhost);
-      
+
     }
     else res = false
-    
-    if(this.isAGhost && ((this.x == pacman.x && this.y== pacman.y) || (this.previousX == pacman.x && this.previousY == pacman.y ))){
+
+    if (this.isAGhost && ((this.x == pacman.x && this.y == pacman.y) || (this.previousX == pacman.x && this.previousY == pacman.y))) {
       this.sendToPrison()
     }
-    if(!this.isAGhost && ((this.x == pacman.x && this.y== pacman.y) || (this.previousX == pacman.x && this.previousY == pacman.y ))){
+    if (!this.isAGhost && ((this.x == pacman.x && this.y == pacman.y) || (this.previousX == pacman.x && this.previousY == pacman.y))) {
       pacman.die()
 
     }
     return res;
-      
+
   }
 
   couldMove(direction, map_design) {
@@ -375,7 +456,7 @@ export class Enemy {
 
     this.moving_to =
       available_directions[
-        Math.floor(Math.random() * available_directions.length)
+      Math.floor(Math.random() * available_directions.length)
       ];
   }
 
@@ -384,16 +465,16 @@ export class Enemy {
    * @param {<Array>Array} bfsArray the result of call BFS function
    * @returns A boolean, true for indicate the enemy has reached the target, false for the oposite
    */
-  moveByBFS(bfsArray , moveHandler = true) {
-    if (!moveHandler){
-    this.hasTouchedPacman();
-  return;
+  moveByBFS(bfsArray, moveHandler = true) {
+    if (!moveHandler) {
+      this.hasTouchedPacman();
+      return;
     }
     const directions = [
-      { dx: 0, dy: -1 }, // Arriba
-      { dx: 0, dy: 1 }, // Abajo
       { dx: -1, dy: 0 }, // Izquierda
       { dx: 1, dy: 0 }, // Derecha
+      { dx: 0, dy: -1 }, // Arriba
+      { dx: 0, dy: 1 }, // Abajo
     ];
 
     let minSteps = Infinity;
@@ -401,10 +482,13 @@ export class Enemy {
     let available_directions = [];
 
     // Revisar las cuatro direcciones posibles
-    for (let dir of directions) {
+
+    directions.forEach((dir, i) => {
+
+
       let newX = this.x + dir.dx;
       let newY = this.y + dir.dy;
-      if(newX == this.previousX && newY == this.previousY) continue;
+      if (newX == this.previousX && newY == this.previousY) return;
 
       // Asegúrate de que la nueva posición esté dentro de los límites del arreglo
       if (newX == 1 && newY == 15) {
@@ -415,23 +499,23 @@ export class Enemy {
         newX = 2;
         newY = 15;
       }
-      
+
       if (bfsArray[newY][newX]) {
         const steps = bfsArray[newY][newX];
 
-          // Si encontramos un nuevo mínimo, reiniciamos los candidatos
-          if (steps < minSteps) {
-            minSteps = steps;
-            candidates = [{ x: newX, y: newY }];
-          } else if (steps === minSteps) {
-            // Si es igual al mínimo, lo añadimos a los candidatos
-            candidates.push({ x: newX, y: newY });
-        } 
+        // Si encontramos un nuevo mínimo, reiniciamos los candidatos
+        if (steps < minSteps) {
+          minSteps = steps;
+          candidates = [{ x: newX, y: newY }];
+        } else if (steps === minSteps) {
+          // Si es igual al mínimo, lo añadimos a los candidatos
+          candidates.push({ x: newX, y: newY });
+        }
       }
       if (this.map_design[newY][newX] & 1) {
         available_directions.push(dir);
       }
-          }
+    })
     // Elegir un candidato al azar si hay múltiples
 
     if (candidates.length > 0) {
@@ -440,52 +524,69 @@ export class Enemy {
       this.previousY = this.y;
       this.x = chosen.x;
       this.y = chosen.y;
+      this.moving_to = this.getMovementDirection(this.x, this.y, this.previousX, this.previousY)
+
+      
     }
     this.hasTouchedPacman()
 
   }
 
-  moveEnemy( map_design, bfsArray , moveHandler) {
-
+  getMovementDirection(x, y, previousX, previousY) {
+    if (x > previousX) {
+      return Direction.RIGHT; // Se movió hacia la derecha
+    } else if (x < previousX) {
+      return Direction.LEFT; // Se movió hacia la izquierda
+    } else if (y > previousY) {
+      return Direction.DOWN; // Se movió hacia abajo
+    } else if (y < previousY) {
+      return Direction.UP; // Se movió hacia arriba
+    } else {
+      return Direction.NO_MOVE; // No hubo movimiento
+    }
+  }
   
+  moveEnemy(map_design, bfsArray, moveHandler) {
+
+
 
     if (!this.hasReached) {
-      this.hasReached = this.moveByBFS(bfsArray , moveHandler);
-    }else  {
+      this.hasReached = this.moveByBFS(bfsArray, moveHandler);
+    } else {
 
-      if (!moveHandler){
+      if (!moveHandler) {
         this.hasTouchedPacman();
-      return;
-        }
+        return;
+      }
       this.moveInRoute(map_design)
     }
   }
 
 
-  moveInRoute( ) {
+  moveInRoute() {
     if (enemy_route[this.y][this.x]) {
       this.moving_to = enemy_route[this.y][this.x]
     }
-    
+
     if (
-      this.moving_to == Direction.LEFT 
+      this.moving_to == Direction.LEFT
     ) {
       this.previousX = this.x;
       this.x -= this.speed;
     }
     if (
-      this.moving_to == Direction.RIGHT 
+      this.moving_to == Direction.RIGHT
     ) {
       this.previousX = this.x;
       this.x += this.speed;
     }
     if (
-      this.moving_to == Direction.DOWN 
+      this.moving_to == Direction.DOWN
     ) {
       this.previousX = this.y;
       this.y += this.speed;
     }
-    if (this.moving_to == Direction.UP ) {
+    if (this.moving_to == Direction.UP) {
       this.previousX = this.y;
       this.y -= this.speed;
     }
@@ -494,8 +595,8 @@ export class Enemy {
 
   }
   moveToOpositeDirection() {
-    this.previousX  = this.x
-    this.previousY  = this.y
+    this.previousX = this.x
+    this.previousY = this.y
     if (this.moving_to == Direction.LEFT) {
       this.moving_to = Direction.RIGHT;
     }
@@ -508,17 +609,19 @@ export class Enemy {
     if (this.moving_to == Direction.UP) {
       this.moving_to = Direction.DOWN;
     }
+    console.log(this.moving_to);
+    
   }
-  moveAsGhost(bfsArray , moveHandler = true) {
+  moveAsGhost(bfsArray, moveHandler = true) {
     if (!moveHandler) {
-        this.hasTouchedPacman();
-        return;
+      this.hasTouchedPacman();
+      return;
     }
     const directions = [
-        { dx: 0, dy: -1 }, // Arriba
-        { dx: 0, dy: 1 },  // Abajo
-        { dx: -1, dy: 0 }, // Izquierda
-        { dx: 1, dy: 0 },  // Derecha
+      { dx: 0, dy: -1 }, // Arriba
+      { dx: 0, dy: 1 },  // Abajo
+      { dx: -1, dy: 0 }, // Izquierda
+      { dx: 1, dy: 0 },  // Derecha
     ];
 
     let maxSteps = -Infinity;
@@ -527,48 +630,50 @@ export class Enemy {
 
     // Revisar las cuatro direcciones posibles
     for (let dir of directions) {
-        let newX = this.x + dir.dx;
-        let newY = this.y + dir.dy;
-        if (newX === this.previousX && newY === this.previousY) continue;
+      let newX = this.x + dir.dx;
+      let newY = this.y + dir.dy;
+      if (newX === this.previousX && newY === this.previousY) continue;
 
-        // Verificar los límites de las posiciones
-        if (newX === 1 && newY === 15) {
-            newX = 27;
-            newY = 15;
-        }
-        if (newX === 28 && newY === 15) {
-            newX = 2;
-            newY = 15;
-        }
+      // Verificar los límites de las posiciones
+      if (newX === 1 && newY === 15) {
+        newX = 27;
+        newY = 15;
+      }
+      if (newX === 28 && newY === 15) {
+        newX = 2;
+        newY = 15;
+      }
 
-        // Revisar si la nueva posición está en el array y tiene un valor
-        if (bfsArray[newY][newX]) {
-            const steps = bfsArray[newY][newX];
+      // Revisar si la nueva posición está en el array y tiene un valor
+      if (bfsArray[newY][newX]) {
+        const steps = bfsArray[newY][newX];
 
-            // Si encontramos un nuevo máximo, reiniciamos los candidatos
-            if (steps > maxSteps) {
-                maxSteps = steps;
-                candidates = [{ x: newX, y: newY }];
-            } else if (steps === maxSteps) {
-                // Si es igual al máximo, lo añadimos a los candidatos
-                candidates.push({ x: newX, y: newY });
-            } 
+        // Si encontramos un nuevo máximo, reiniciamos los candidatos
+        if (steps > maxSteps) {
+          maxSteps = steps;
+          candidates = [{ x: newX, y: newY }];
+        } else if (steps === maxSteps) {
+          // Si es igual al máximo, lo añadimos a los candidatos
+          candidates.push({ x: newX, y: newY });
         }
-        if (this.map_design[newY][newX] & 1) {
-            available_directions.push(dir);
-        }
+      }
+      if (this.map_design[newY][newX] & 1) {
+        available_directions.push(dir);
+      }
     }
 
     // Elegir un candidato al azar si hay múltiples
     if (candidates.length > 0) {
-        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-        this.previousX = this.x;
-        this.previousY = this.y;
-        this.x = chosen.x;
-        this.y = chosen.y;
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+      this.previousX = this.x;
+      this.previousY = this.y;
+      this.x = chosen.x;
+      this.y = chosen.y;
+      this.moving_to = this.getMovementDirection(this.x, this.y, this.previousX, this.previousY)
+    
     }
     this.hasTouchedPacman();
-}
+  }
 
 }
 
@@ -636,9 +741,9 @@ export function BFS(matrix, start) {
   return bfsArray;
 }
 
-const showGameOver = () =>{
+const showGameOver = () => {
   console.log("game over");
-  
-    const $gameOver = document.querySelector('.game-over');
-    $gameOver.style.opacity = 1;
+
+  const $gameOver = document.querySelector('.game-over');
+  $gameOver.style.opacity = 1;
 }
