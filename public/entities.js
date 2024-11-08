@@ -327,7 +327,6 @@ export class Enemy {
     if (value === this._moving_to) {
       return;
     }
-    console.log("moving to", value);
     
     this._moving_to = value;
     this.setAnimation(value);  // Se necesita una implementación de setAnimation
@@ -609,7 +608,6 @@ export class Enemy {
     if (this.moving_to == Direction.UP) {
       this.moving_to = Direction.DOWN;
     }
-    console.log(this.moving_to);
     
   }
   moveAsGhost(bfsArray, moveHandler = true) {

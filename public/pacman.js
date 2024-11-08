@@ -6,6 +6,8 @@ const canvas = document.getElementById("screen");
 /** @type {CanvasRenderingContext2D} */
 var ctx = canvas.getContext("2d");
 
+console.log("Pacman Vanilla JS DEMO, developed by github.com/freddysae0. freddyjs.es");
+
 export const x = 25;
 const widthBlocks = 29;
 const heightBlocks = 32;
@@ -255,14 +257,11 @@ let pacmanRenderTime = 0
 function renderPacman() {
   pacmanRenderTime += deltaTime;
 
-
   if (pacmanRenderTime >= 0.2) {
-    console.log("coooo",  animationsImgs[pacman.currentAnimation + '/' + animations[pacman.currentAnimation][pacman.currentFrame]]);
-    
     ctx.drawImage(animationsImgs[pacman.currentAnimation + '/' + animations[pacman.currentAnimation][pacman.currentFrame]], pacman.x * x - 5, pacman.y * x - 3, pacman.size, pacman.size);
     pacmanRenderTime = 0;
+    pacman.nextFrame();
   }
-  pacman.nextFrame();
   // Painting Pacman
 
 
@@ -350,7 +349,6 @@ async function loadAnimations() {
     }
     
   pacman.animations = animations
-  console.log(animations);
   enemies[0].animations = animations
   enemies[1].animations = animations
   enemies[2].animations = animations
@@ -387,8 +385,6 @@ async function loadAnimation(url) {
     // Esperar que todas las imágenes se hayan cargado
     await Promise.all(imagePromises);
 
-    console.log('Todas las imágenes se cargaron correctamente');
-    console.log(data);  // Aquí se tiene el contenido del JSON
   } catch (error) {
     console.error('Hubo un problema con la solicitud Fetch:', error);
   }
@@ -413,7 +409,6 @@ document.addEventListener("touchend", (event) => {
 const awaitLoadingInterval = setInterval(() => {
   if (!isLoading) {
     // Ensure `animations` is fully loaded before starting the game loop
-    console.log("aaaaaaaaaa", animations);
 
     if (animations && Object.keys(animations).length > 0) {
       gameLoop(0);
