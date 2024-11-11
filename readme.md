@@ -1,6 +1,7 @@
 
 # Pacman.js
 
+![Pacman game](https://github.com/user-attachments/assets/8f4a1205-3303-412f-8805-8f56077f80bd)
 Este proyecto es una recreacion de Pac-Man desarrollada con JavaScript y Express.js, diseñado para ejecutarse en un servidor local. Utiliza livereload para facilitar el desarrollo en tiempo real.
 
 ## Estructura del Proyecto
