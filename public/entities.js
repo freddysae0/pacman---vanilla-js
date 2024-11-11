@@ -1,6 +1,3 @@
-
-const scale = 25;
-let renderCounter = 0;
 export const Direction = {
   LEFT: 1,
   RIGHT: 2,
@@ -9,7 +6,7 @@ export const Direction = {
   NO_MOVE: 0,
   DIE: 5
 };
-export const enemy_route = Array.from({ length: 31 }, () => new Array(31).fill(0));
+const enemy_route = Array.from({ length: 31 }, () => new Array(31).fill(0));
 enemy_route[2][2] = Direction.RIGHT;
 enemy_route[2][7] = Direction.DOWN;
 enemy_route[6][7] = Direction.LEFT;
@@ -41,13 +38,49 @@ enemy_route[30][16] = Direction.UP;
 enemy_route[27][16] = Direction.RIGHT;
 const $lifes = document.querySelector(".lifes-container");
 
-export const drawLifes = (lifes) => {
-  let innerContent = "";
-  for (let i = 0; i < lifes; i++) {
-    innerContent += `<img class="heart" src="./assets/heart.png" alt="Lifes">`
-  }
-  $lifes.innerHTML = innerContent
-}
+/**
+ * Representa el personaje de Pacman en el juego.
+ * @type {Object}
+ * @property {string} name - El nombre del personaje.
+ * @property {string} img - La ruta de la imagen de Pacman.
+ * @property {number} x - La posición X actual en el mapa.
+ * @property {number} y - La posición Y actual en el mapa.
+ * @property {number} previousX - La posición X previa de Pacman.
+ * @property {number} previousY - La posición Y previa de Pacman.
+ * @property {number} speed - La velocidad de movimiento de Pacman.
+ * @property {number} size - El tamaño de Pacman.
+ * @property {Direction} _moving_to - Dirección de movimiento actual de Pacman.
+ * @property {string} currentAnimation - Ruta de la animación actual.
+ * @property {number} currentFrame - Fotograma actual de la animación.
+ * @property {string} animation_right - Ruta de la animación hacia la derecha.
+ * @property {string} animation_down - Ruta de la animación hacia abajo.
+ * @property {string} animation_up - Ruta de la animación hacia arriba.
+ * @property {string} animation_left - Ruta de la animación hacia la izquierda.
+ * @property {number} coins - Cantidad de monedas recogidas por Pacman.
+ * @property {number} bfs - Estado del algoritmo BFS en el juego.
+ * @property {number} lifes - Número de vidas restantes de Pacman.
+ * @property {Array} enemies - Lista de enemigos presentes en el juego.
+ * @property {number} ghostTime - Tiempo en que los fantasmas se mantienen en modo vulnerable.
+ * @property {boolean} hasWon - Estado de victoria del juego.
+ * 
+ * @property {Function} resetEnemies - Función para reiniciar los enemigos.
+ * @property {Object|null} original_map_design - Diseño original del mapa.
+ * @property {Object|null} animations - Colección de animaciones.
+ * 
+ * @property {Function} get moving_to - Retorna la dirección a la que se está moviendo Pacman.
+ * @property {Function} set moving_to - Establece la dirección de movimiento de Pacman y actualiza la animación.
+ * @property {Function} nextFrame - Avanza al siguiente fotograma de la animación actual.
+ * @property {Function} setAnimation - Establece la animación actual de acuerdo a la dirección dada.
+ * @property {Function} drawLifes - Actualiza el número de vidas mostrado en pantalla.
+ * @property {Function} drawCoinNumber - Actualiza el número de monedas mostrado en pantalla.
+ * @property {Function} activateGhostMode - Activa el modo de fantasma para todos los enemigos.
+ * @property {Function} desactivateGhostMode - Desactiva el modo de fantasma y restaura el estado normal de los enemigos.
+ * @property {Function} gameWined - Gestiona la lógica cuando Pacman gana el juego.
+ * @property {Function} eat_food - Gestiona la comida recolectada por Pacman y activa el modo fantasma si es necesario.
+ * @property {Function} could_move - Determina si Pacman puede moverse en la dirección indicada.
+ * @property {Function} die - Gestiona la lógica cuando Pacman pierde una vida.
+ * @property {Function} move_pacman - Mueve a Pacman en la dirección actual, calcula y devuelve la ruta más corta hacia los fantasmas.
+ */
 export const pacman = {
   name: "Pacman",
   img: "./assets/entities/pacman.png",
@@ -76,9 +109,22 @@ export const pacman = {
   hasWon: false,
   animations: null,
 
+  /**
+   * Returns the direction to which the player is currently moving.
+   * @returns {number} The direction to which the player is moving.
+   *   It is one of the predefined directions in the Direction object
+   *   (e.g., Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN, Direction.NO_MOVE).
+   */
   get moving_to() {
     return this._moving_to;
   },
+  /**
+   * Sets the direction to which the player is moving.
+   * This property is used to update the animation of the player.
+   * @param {number} value - The direction to which the player is moving.
+   *   It should be one of the predefined directions in the Direction object
+   *   (e.g., Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN, Direction.NO_MOVE).
+   */
   set moving_to(value) {
     if (value == this._moving_to) {
       return;
@@ -88,6 +134,10 @@ export const pacman = {
 
   },
 
+  /**
+   * Goes to the next frame of the current animation.
+   * If the end of the animation is reached, resets to the first frame.
+   */
   nextFrame() {
     if (this.currentFrame == this.animations[this.currentAnimation].length - 1) {
       this.currentFrame = 0;
@@ -97,6 +147,17 @@ export const pacman = {
     }
   },
 
+  /**
+   * Sets the current animation based on the specified direction.
+   * 
+   * @param {number} direction - The direction for which to set the animation.
+   *   This should be one of the predefined Direction constants:
+   *   - Direction.LEFT: Sets the animation to moving left.
+   *   - Direction.RIGHT: Sets the animation to moving right.
+   *   - Direction.UP: Sets the animation to moving up.
+   *   - Direction.DOWN: Sets the animation to moving down.
+   *   - Direction.DIE: Sets the animation to dying.
+   */
   setAnimation: function (direction) {
     if (direction == Direction.LEFT) {
       this.currentAnimation = this.animation_left;
@@ -117,12 +178,28 @@ export const pacman = {
     }
   },
 
+  /**
+   * Updates the number of lifes displayed on the top-right corner of the screen.
+   * If `val` is not provided, it defaults to the current value of `this.lifes`.
+   * @param {number} [val=this.lifes] - The number of lifes to be displayed.
+   */
   drawLifes: function (val = this.lifes) {
     drawLifes(val)
   },
+  /**
+   * Updates the number of coins displayed on the top-right corner of the screen.
+   * If `val` is not provided, it defaults to the current value of `this.coins`.
+   * @param {number} [val=this.coins] - The number of coins to be displayed.
+   */
   drawCoinNumber: function (val = this.coins) {
     document.getElementById("coin-ammount").innerHTML = val;
   },
+
+  /**
+   * Activates the Ghost Mode, converting all enemies to Ghosts.
+   * It changes their behavior and appearance.
+   * This method is used when the player eats a Power Pellet.
+   */
   activateGhostMode() {
     console.log("ghost mode started");
 
@@ -130,18 +207,41 @@ export const pacman = {
       enemy.convertToGhost();
     })
   },
+  /**
+   * Deactivates the Ghost Mode, reverting all enemies to their normal state.
+   */
   desactivateGhostMode() {
     console.log("ghost mode ended ");
     this.enemies.map((enemy) => {
       enemy.revertFromGhost();
     })
   },
+
+  /**
+   * Revisa si el Pacman ha comido un Power Up o una Coin.
+   * Si ha comido una Power Up, activa el modo de fantasma y
+   * reinicia el temporizador.
+   * Si ha comido una Coin, suma 100 coins y vuelve a dibujar la cantidad de coins.
+   * Si ha alcanzado 26000 coins, gana el juego.
+   * @param {Array<Array<number>>} map_design - El dise o del mapa
+   */
   gameWined() {
     console.log("game wined");
     this.hasWon = true;
     this.nextLevel();
 
+    /*************  ✨ Codeium Command ⭐  *************/
+    /**
+     * Revisa si el Pacman ha comido un Power Up o una Coin.
+     * Si ha comido una Power Up, activa el modo de fantasma y
+     * reinicia el temporizador.
+     * Si ha comido una Coin, suma 100 coins y vuelve a dibujar la cantidad de coins.
+     * Si ha alcanzado 26000 coins, gana el juego.
+     * @param {Array<Array<number>>} map_design - El dise o del mapa
+     */
+    /******  a1d6984e-1811-4581-b204-f15ab32f719a  *******/
   },
+
   eat_food: function (map_design) {
     if (map_design[this.y][this.x] & 4) {
       this.coins += 500;
@@ -168,6 +268,12 @@ export const pacman = {
       this.gameWined()
     }
   },
+  /**
+   * Determines if pacman can move in the given direction
+   * @param {number} direction - The direction pacman wants to move
+   * @param {Array<Array<number>>} map_design - The current map design
+   * @returns {boolean} true if pacman can move, false otherwise
+   */
   could_move: function (direction, map_design) {
     /* Portals */
     if (direction == Direction.LEFT && this.x == 2 && this.y == 15) {
@@ -192,6 +298,12 @@ export const pacman = {
     return false;
   },
 
+  /**
+   * Called when pacman dies
+   * Decrements lifes and resets pacman position to the starting one
+   * Also resets the enemies position
+   * If lifes are 0, shows the game over screen
+   */
   die() {
     //What happens wen pacman dies
     this.lifes--;
@@ -274,9 +386,18 @@ export const pacman = {
   },
 };
 
-export const minimumPaths = new Array();
-
 export class Enemy {
+  /**
+   * Crea un nuevo fantasma
+   * @param {string} [color=""] - El color del fantasma
+   * @param {number} [y=24] - La posición y del fantasma
+   * @param {number} [x=14] - La posición x del fantasma
+   * @param {Array<Array<number>>} [map_design=[]] - El diseño del mapa
+   * @param {{y: number, x: number}} [enemy_route_main_point={y: 6, x: 7}] - La posición principal de la ruta del fantasma
+   * @param {{y: number, x: number}} [start={y: 2, x: 2}] - La posición de inicio del fantasma
+   * @param {number} [delay=0.2] - El retraso antes de que el fantasma aparezca
+   * @param {Object} [animations=null] - Las animaciones del fantasma
+   */
   constructor(
     color = "",
     y = 24,
@@ -286,17 +407,17 @@ export class Enemy {
     start = { y: 2, x: 2 },
     delay = 0.2,
     animations = null,
-    
-    
+
+
   ) {
     this.currentFrame = 0,
-    this.animations = animations;
+      this.animations = animations;
     this.currentAnimation = `./assets/${color}-enemy/moving-right`,
-    this.animation_right = `./assets/${color}-enemy/moving-right`,
-    this.animation_down = `./assets/${color}-enemy/moving-down`,
-    this.animation_up = `./assets/${color}-enemy/moving-up`,
-    this.animation_left = `./assets/${color}-enemy/moving-left`,
-    this.isInPrison = true;
+      this.animation_right = `./assets/${color}-enemy/moving-right`,
+      this.animation_down = `./assets/${color}-enemy/moving-down`,
+      this.animation_up = `./assets/${color}-enemy/moving-up`,
+      this.animation_left = `./assets/${color}-enemy/moving-left`,
+      this.isInPrison = true;
     this.isAGhost = false;
     this.hasReached = false;
     this.color = color;
@@ -310,7 +431,7 @@ export class Enemy {
     this.size = 30;
     this.map_design = map_design;
     this.delay = delay;
-    
+
     clearTimeout(this.appearTimeout);
     this.appearTimeout = setTimeout(() => {
       this.x = 15
@@ -323,16 +444,28 @@ export class Enemy {
     return this._moving_to;
   }
 
+  /**
+   * Set the direction to which the enemy is moving.
+   * This property is used to update the animation of the enemy.
+   * @param {number} value - The direction to which the enemy is moving.
+   *   It should be one of the predefined directions in the Direction object
+   *   (e.g., Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN, Direction.DIE).
+   */
   set moving_to(value) {
     if (value === this._moving_to) {
       return;
     }
-    
+
     this._moving_to = value;
     this.setAnimation(value);  // Se necesita una implementación de setAnimation
   }
 
 
+  /**
+   * Advances the current animation frame to the next frame.
+   * If the current frame is the last frame in the animation sequence,
+   * it resets to the first frame.
+   */
   nextFrame() {
     if (this.currentFrame == this.animations[this.currentAnimation].length - 1) {
       this.currentFrame = 0;
@@ -341,6 +474,13 @@ export class Enemy {
       this.currentFrame++;
     }
   }
+  /**
+   * Updates the current animation based on the given direction.
+   * 
+   * @param {number} direction - The direction for which to set the animation.
+   *   It should be one of the predefined directions in the Direction object
+   *   (e.g., Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN, Direction.DIE).
+   */
   setAnimation(direction) {
     if (direction == Direction.LEFT) {
       this.currentAnimation = this.animation_left;
@@ -360,6 +500,10 @@ export class Enemy {
 
     }
   }
+  /**
+   * Resets the enemy to its starting position and state
+   * @return {undefined}
+   */
   reset() {
     this.isInPrison = true;
     this.isAGhost = false;
@@ -375,17 +519,36 @@ export class Enemy {
       this.y = 12
     }, this.delay * 1000)
   }
+
+  /**
+   * Sets the enemy as a ghost by setting the isAGhost flag to true.
+   * This method is used to mark the enemy as a ghost in the game logic.
+   */
   convertToGhost() {
     this.isAGhost = true;
   }
+  /**
+   * Reverts the enemy from ghost state to normal state.
+   * Sets the isAGhost flag to false.
+   */
   revertFromGhost() {
     this.isAGhost = false;
   }
+  /**
+   * Free the enemy from prison by setting its position to the coordinates
+   * right outside the prison and marking it as not being in prison.
+   */
   freeFromPrision() {
     this.isInPrison = false;
     this.x = 14
     this.y = 12
   }
+
+  /**
+   * Sends the enemy to prison by setting its position to the starting coordinates.
+   * Also marks the enemy as being in prison. Invokes the freeFromPrision method
+   * to handle additional logic for freeing from prison state.
+   */
   sendToPrison() {
     this.isInPrison = true;
     this.x = this.start.x
@@ -394,6 +557,12 @@ export class Enemy {
     this.previousY = this.start.y
     this.freeFromPrision()
   }
+  /**
+   * Checks if the enemy has touched pacman.
+   * If the enemy is a ghost, it will be sent to prison.
+   * If the enemy is not a ghost, pacman will die.
+   * @returns {boolean} True if the enemy has touched pacman, false otherwise.
+   */
   hasTouchedPacman() {
     let res = false;
 
@@ -413,6 +582,7 @@ export class Enemy {
     return res;
 
   }
+
 
   couldMove(direction, map_design) {
     /* Portals */
@@ -525,12 +695,21 @@ export class Enemy {
       this.y = chosen.y;
       this.moving_to = this.getMovementDirection(this.x, this.y, this.previousX, this.previousY)
 
-      
+
     }
     this.hasTouchedPacman()
 
   }
 
+  /**
+   * Devuelve la dirección que se movió el fantasma, comparando las
+   * posiciones actuales y previas.
+   * @param {number} x Posición actual en el eje x
+   * @param {number} y Posición actual en el eje y
+   * @param {number} previousX Posición previa en el eje x
+   * @param {number} previousY Posición previa en el eje y
+   * @returns {number} La dirección en que se movió el fantasma (constante de Direction)
+   */
   getMovementDirection(x, y, previousX, previousY) {
     if (x > previousX) {
       return Direction.RIGHT; // Se movió hacia la derecha
@@ -544,7 +723,13 @@ export class Enemy {
       return Direction.NO_MOVE; // No hubo movimiento
     }
   }
-  
+
+  /**
+   * Moves the enemy according to its internal state
+   * @param {Array<Array<number>>} map_design - The map design
+   * @param {Array<Array<number>>} bfsArray - The BFS array
+   * @param {Boolean} moveHandler - If false, the hasTouchedPacman method will be called
+   */
   moveEnemy(map_design, bfsArray, moveHandler) {
 
 
@@ -562,6 +747,12 @@ export class Enemy {
   }
 
 
+  /**
+   * Moves the enemy along a predefined route based on the current position.
+   * Updates the enemy's direction and position according to the route map.
+   * Adjusts `moving_to`, `x`, and `y` properties depending on the direction.
+   * Utilizes the `enemy_route` matrix to determine the next direction of movement.
+   */
   moveInRoute() {
     if (enemy_route[this.y][this.x]) {
       this.moving_to = enemy_route[this.y][this.x]
@@ -608,8 +799,15 @@ export class Enemy {
     if (this.moving_to == Direction.UP) {
       this.moving_to = Direction.DOWN;
     }
-    
+
   }
+  /**
+  * Moves the ghost to the position that is farthest from Pacman based on the
+  * given BFS array.
+  * @param {Number[][]} bfsArray - A 2D array representing the steps needed to reach Pacman.
+  * @param {Boolean} moveHandler - If false, the ghost will not move and instead
+  *                                will trigger the hasTouchedPacman method.
+  */
   moveAsGhost(bfsArray, moveHandler = true) {
     if (!moveHandler) {
       this.hasTouchedPacman();
@@ -668,7 +866,7 @@ export class Enemy {
       this.x = chosen.x;
       this.y = chosen.y;
       this.moving_to = this.getMovementDirection(this.x, this.y, this.previousX, this.previousY)
-    
+
     }
     this.hasTouchedPacman();
   }
@@ -739,9 +937,18 @@ export function BFS(matrix, start) {
   return bfsArray;
 }
 
-const showGameOver = () => {
+export const showGameOver = () => {
   console.log("game over");
 
   const $gameOver = document.querySelector('.game-over');
   $gameOver.style.opacity = 1;
+}
+
+
+export function drawLifes(lifes) {
+  let innerContent = "";
+  for (let i = 0; i < lifes; i++) {
+    innerContent += `<img class="heart" src="./assets/heart.png" alt="Lifes">`
+  }
+  $lifes.innerHTML = innerContent
 }

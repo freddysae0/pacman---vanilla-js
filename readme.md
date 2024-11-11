@@ -1,45 +1,43 @@
-
 # Pacman.js
 
 ![Pacman game](https://github.com/user-attachments/assets/8f4a1205-3303-412f-8805-8f56077f80bd)
 
-Este proyecto es una recreacion de Pac-Man desarrollada con JavaScript y Express.js, diseñado para ejecutarse en un servidor local. Utiliza livereload para facilitar el desarrollo en tiempo real.
+This project is a recreation of Pac-Man developed with JavaScript and Express.js, designed to run on a local server. It uses livereload to facilitate real-time development.
 
-## Estructura del Proyecto
+## Project Structure
 
-- **main.js**: Archivo principal del servidor que configura y ejecuta una instancia de Express.js para servir el contenido del juego. Incluye:
-  - Configuración del middleware `connect-livereload` para recargar automáticamente.
-  - Rutas para servir archivos HTML y otros recursos del juego desde el directorio `public`.
+- **main.js**: Main server file that sets up and runs an Express.js instance to serve the game content. Includes:
+  - Configuration of `connect-livereload` middleware for automatic reloading.
+  - Routes to serve HTML files and other game resources from the `public` directory.
 
-- **public/entities.js**: Archivo donde se define la lógica del juego relacionada con los movimientos de los enemigos y la estructura de las rutas.
-  - **Direction**: Un objeto que define constantes para las direcciones de movimiento de los personajes.
+- **public/entities.js**: File that defines game logic related to enemy movements and route structure.
+  - **Direction**: An object defining constants for character movement directions.
 
-- **public/pacman.js**: Archivo principal del juego donde se encuentra el gameLoop y otras funciones importantes.
+- **public/pacman.js**: Main game file containing the gameLoop and other key functions.
 
+## Technologies Used
 
-## Tecnologías Utilizadas
+- **JavaScript**: For game logic.
+- **Node.js and Express**: To set up the local server.
+- **livereload and connect-livereload**: For automatic page reloading during development.
 
-- **JavaScript**: Para la lógica del juego.
-- **Node.js y Express**: Para configurar el servidor local.
-- **livereload y connect-livereload**: Para recargar automáticamente la página durante el desarrollo.
+## Installation and Execution
 
-## Instalación y Ejecución
-
-1. Clona este repositorio.
-2. Instala las dependencias necesarias:
+1. Clone this repository.
+2. Install the necessary dependencies:
    ```bash
    npm install
    ```
-3. Inicia el servidor:
+3. Start the server:
    ```bash
    node main.js
    ```
-4. Abre el navegador en `http://localhost:3000` para ver el juego.
+4. Open your browser at `http://localhost:3000` to view the game.
 
-## Contribución
+## Contribution
 
-Este es un proyecto en desarrollo, por lo que cualquier contribución es bienvenida. Si encuentras errores o tienes ideas de mejora, abre un issue o envía un pull request.
+This is a project in development, so any contribution is welcome. If you find bugs or have improvement ideas, please open an issue or submit a pull request.
 
-## Licencia
+## License
 
-Este proyecto se distribuye bajo la licencia MIT.
+This project is distributed under the MIT license.
